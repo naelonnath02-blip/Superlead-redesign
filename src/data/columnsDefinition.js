@@ -2,20 +2,21 @@
 // into Superleap's role-based presets.
 
 export const ALL_COLUMNS = [
-  // 1-6: Essential FRONT-LINE Columns (Call Centre Agent View)
-  { id: 'patient', label: 'Patient Name & ID', category: 'Essential', width: 230, alwaysVisible: true },
-  { id: 'contact', label: 'Phone & WhatsApp', category: 'Contact', width: 170 },
-  { id: 'clinic', label: 'Clinic & City', category: 'Operational', width: 180 },
-  { id: 'stage', label: 'Patient Journey Stage', category: 'Clinical', width: 190 },
-  { id: 'intent_score', label: 'AI Intent Score', category: 'Essential', width: 140 },
-  { id: 'actions', label: 'Quick Action', category: 'Essential', width: 190, alwaysVisible: true },
+  // 1-7: Essential FRONT-LINE Columns (Superleap Clean Deal View as in Image 1)
+  { id: 'patient', label: 'LEAD NAME', category: 'Essential', width: 220, alwaysVisible: true },
+  { id: 'phone', label: 'PHONE', category: 'Contact', width: 170 },
+  { id: 'email', label: 'EMAIL', category: 'Contact', width: 220 },
+  { id: 'city', label: 'CITY', category: 'Operational', width: 150 },
+  { id: 'lead_source', label: 'CHANNEL', category: 'Operational', width: 180 },
+  { id: 'stage', label: 'STAGE', category: 'Clinical', width: 180 },
+  { id: 'actions', label: 'ACTION', category: 'Essential', width: 190, alwaysVisible: true },
 
-  // 7-8: Clinic Counsellor Additions
+  // Secondary Frontline Columns
+  { id: 'intent_score', label: 'AI Intent Score', category: 'Essential', width: 140 },
   { id: 'assigned_doctor', label: 'Assigned Specialist', category: 'Clinical', width: 180 },
   { id: 'next_followup', label: 'Consultation / Slot', category: 'Operational', width: 170 },
-
-  // 9-10: Clinic Manager Additions
-  { id: 'lead_source', label: 'Acquisition Source', category: 'Operational', width: 150 },
+  { id: 'clinic', label: 'Clinic Center', category: 'Operational', width: 180 },
+  { id: 'contact', label: 'Phone & WhatsApp', category: 'Contact', width: 170 },
   { id: 'his_sync', label: 'HIS Sync Status', category: 'System', width: 160 },
 
   // 11-40: Additional Fields migrated from Zoho CRM (The 40-column wall)
@@ -52,23 +53,23 @@ export const ALL_COLUMNS = [
 ];
 
 export const ROLE_PRESETS = {
+  counsellor: {
+    id: 'counsellor',
+    name: 'Clinic Counsellor (Clean Image 1 View)',
+    description: 'Superleap clean deal view: Lead Name, Phone, Email, City, Channel, Stage, Action.',
+    columns: ['patient', 'phone', 'email', 'city', 'lead_source', 'stage', 'actions']
+  },
   agent: {
     id: 'agent',
     name: 'Call-Centre Agent (6 cols)',
     description: 'Streamlined for 500 agents. Eliminates 34 noisy columns for sub-second lead triage.',
-    columns: ['patient', 'contact', 'clinic', 'stage', 'intent_score', 'actions']
-  },
-  counsellor: {
-    id: 'counsellor',
-    name: 'Clinic Counsellor (8 cols)',
-    description: 'Tailored for 850 counsellors. Focused on patient rapport, doctors, and consult scheduling.',
-    columns: ['patient', 'contact', 'clinic', 'stage', 'assigned_doctor', 'next_followup', 'intent_score', 'actions']
+    columns: ['patient', 'phone', 'city', 'stage', 'intent_score', 'actions']
   },
   manager: {
     id: 'manager',
     name: 'Clinic Manager (10 cols)',
     description: 'Built for 140 clinic heads. Tracks acquisition channels, HIS synchronization, and cycle conversion.',
-    columns: ['patient', 'contact', 'clinic', 'stage', 'assigned_doctor', 'next_followup', 'lead_source', 'his_sync', 'cycle_value', 'actions']
+    columns: ['patient', 'phone', 'email', 'city', 'lead_source', 'stage', 'assigned_doctor', 'his_sync', 'cycle_value', 'actions']
   },
   zoho_legacy: {
     id: 'zoho_legacy',

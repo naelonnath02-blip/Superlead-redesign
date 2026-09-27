@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { HeaderNav } from './components/HeaderNav';
-import { SavedViewsTabs } from './components/SavedViewsTabs';
+import { SidebarNav } from './components/SidebarNav';
+import { MainTopBar } from './components/MainTopBar';
 import { FilterToolbar } from './components/FilterToolbar';
 import { LeadTable } from './components/LeadTable';
+import { ReportsDashboardView } from './components/ReportsDashboardView';
 import { ManageColumnsModal } from './components/ManageColumnsModal';
 import { BookConsultationModal } from './components/BookConsultationModal';
 import { LeadDetailDrawer } from './components/LeadDetailDrawer';
@@ -42,7 +43,8 @@ export function App() {
   const [leads, setLeads] = useState(INITIAL_LEADS);
 
   // 3. UI Navigation State
-  const [activeScreen, setActiveScreen] = useState('leads'); // 'leads' | 'clinic_day' | 'pipeline' | 'audit'
+  const [activeScreen, setActiveScreen] = useState('leads'); // 'leads' | 'reports_dashboard' | 'clinic_day' | 'pipeline' | 'audit'
+  const [activeSmartboardFilter, setActiveSmartboardFilter] = useState('all');
 
   // 4. Modals & Drawers State
   const [showColumnManager, setShowColumnManager] = useState(false);
@@ -50,8 +52,8 @@ export function App() {
   const [selectedLead, setSelectedLead] = useState(null);
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
   const [toast, setToast] = useState({
-    title: 'Superleap Deploy Excellence Initialized',
-    message: 'Loaded 6-column optimized frontline view. 0% filter reset guarantee active.',
+    title: 'Superleap CRM Initialized',
+    message: 'Loaded authentic left nav and clean deals population. 0% filter loss active.',
     type: 'success'
   });
   const [hisSyncActive, setHisSyncActive] = useState(true);
@@ -64,6 +66,24 @@ export function App() {
     }, 5500);
   }, []);
 
+  // Quick Smartboard Filter Handler
+  const handleSmartboardClick = useCallback((filterType) => {
+    setActiveSmartboardFilter(filterType);
+    if (filterType === 'high_intent') {
+      updateFilter('minScore', 85);
+      showToast('Smartboard: High Intent IVF', 'Filtered to patients with score ≥ 85%', 'info');
+    } else if (filterType === 'omnichannel') {
+      updateFilter('source', 'Facebook Ads');
+      showToast('Smartboard: Omnichannel Leads', 'Filtered to active digital & chat inbound inquiries', 'info');
+    } else if (filterType === 'his_synced') {
+      updateFilter('hisSync', 'cycle_active');
+      showToast('Smartboard: HIS Cycle Starts', 'Filtered to patients actively undergoing stimulation in hospital', 'his');
+    } else {
+      resetFilters();
+      setActiveSmartboardFilter('all');
+    }
+  }, [updateFilter, resetFilters, showToast]);
+
   // 5. Filter Leads Computation
   const filteredLeads = useMemo(() => {
     return leads.filter((lead) => {
@@ -74,6 +94,7 @@ export function App() {
           lead.patient_name.toLowerCase().includes(q) ||
           lead.id.toLowerCase().includes(q) ||
           lead.phone.toLowerCase().includes(q) ||
+          (lead.email && lead.email.toLowerCase().includes(q)) ||
           lead.city.toLowerCase().includes(q) ||
           lead.clinic_name.toLowerCase().includes(q) ||
           (lead.assigned_doctor && lead.assigned_doctor.toLowerCase().includes(q)) ||
@@ -116,10 +137,10 @@ export function App() {
   }, [leads, filters]);
 
   // 6. Action Handlers
-  // A. Trigger HIS Webhook Simulation (Meera's challenge: IVF cycle start sync)
+  // A. Trigger HIS Webhook Simulation (IVF cycle start sync)
   const handleTriggerHisSimulation = useCallback(() => {
-    const targetLeadId = selectedLead ? selectedLead.id : 'NF-10294';
-    const targetName = selectedLead ? selectedLead.patient_name : 'Priyanka Sharma';
+    const targetLeadId = selectedLead ? selectedLead.id : 'NF-10306';
+    const targetName = selectedLead ? selectedLead.patient_name : 'Neha Verma';
 
     setLeads(prev => prev.map(l => {
       if (l.id === targetLeadId) {
@@ -147,7 +168,7 @@ export function App() {
 
     showToast(
       '🧬 HIS Webhook Received: IVF Cycle Commenced!',
-      `Live event triggered for ${targetName} (${targetLeadId}). Stage automatically updated to "IVF Cycle" in Superleap.`,
+      `Live reverse-sync received for ${targetName} (${targetLeadId}). Stage automatically updated to "IVF Cycle" in Superleap.`,
       'his'
     );
   }, [selectedLead, showToast]);
@@ -194,7 +215,7 @@ export function App() {
   const handleQuickCall = useCallback((lead) => {
     showToast(
       '📞 Exotel CTI Dialing...',
-      `Connecting call to ${lead.patient_name} (${lead.phone}) via Nova Bangalore Cloud Telephony trunk.`,
+      `Connecting call to ${lead.patient_name} (${lead.phone}) via Nova Cloud Telephony trunk.`,
       'info'
     );
   }, [showToast]);
@@ -230,84 +251,102 @@ export function App() {
   const mobileActiveLead = selectedLead || filteredLeads[0] || leads[0];
 
   return (
-    <div className="sl-app-root">
-      {/* 1. Header Navigation */}
-      <HeaderNav 
-        currentRole={currentRole}
-        onRoleChange={handleRoleChange}
+    <div className="sl-app-shell">
+      {/* 1. Authentic Superleap Left Navigation Sidebar */}
+      <SidebarNav 
         activeScreen={activeScreen}
         onScreenChange={setActiveScreen}
+        currentRole={currentRole}
+        onRoleChange={handleRoleChange}
+        onSelectQuickSmartboard={handleSmartboardClick}
+        activeSmartboardFilter={activeSmartboardFilter}
         onOpenCopilot={() => setIsCopilotOpen(true)}
-        hisSyncActive={hisSyncActive}
-        onTriggerHisSimulation={handleTriggerHisSimulation}
         totalLeadsCount={leads.length}
-        activeColumnsCount={visibleColumns.length}
       />
 
-      {/* 2. Main Screen Router (Uncluttered, Low Cognitive Load) */}
-      <main className="sl-main-viewport">
-        {activeScreen === 'leads' && (
-          <div className="sl-leads-screen">
-            {/* Saved Views Tabs Bar */}
-            <SavedViewsTabs 
-              savedViews={savedViews}
-              activeViewId={activeViewId}
-              onSelectView={selectView}
-              onSaveAsNewView={saveAsNewView}
-              onUpdateCurrentView={updateCurrentView}
-              onDeleteView={deleteSavedView}
-              isFilterModified={isFilterModified}
-              onResetFilters={resetFilters}
-            />
-
-            {/* Filter & Search Toolbar */}
-            <FilterToolbar 
-              filters={filters}
-              onUpdateFilter={updateFilter}
-              onResetFilters={resetFilters}
-              onOpenColumnManager={() => setShowColumnManager(true)}
-              activeColumnsCount={visibleColumns.length}
-              totalColumnsCount={ALL_COLUMNS.length}
-              matchedCount={filteredLeads.length}
-              totalCount={leads.length}
-            />
-
-            {/* Data Table */}
-            <LeadTable 
-              leads={filteredLeads}
-              visibleColumnIds={visibleColumns}
-              onSelectLead={(lead) => setSelectedLead(lead)}
-              onOpenBookConsultation={(lead) => setBookingLead(lead)}
-              onQuickCall={handleQuickCall}
-              onQuickWhatsApp={handleQuickWhatsApp}
-            />
-          </div>
-        )}
-
-        {activeScreen === 'clinic_day' && (
-          <ClinicDayOverview 
-            leads={leads}
-            onOpenBookConsultation={(lead) => setBookingLead(lead || leads[0])}
-            onSelectLead={(lead) => setSelectedLead(lead)}
-          />
-        )}
-
-        {activeScreen === 'pipeline' && (
-          <PatientJourneyKanban 
-            leads={filteredLeads}
-            onSelectLead={(lead) => setSelectedLead(lead)}
-            onOpenBookConsultation={(lead) => setBookingLead(lead)}
-          />
-        )}
-
-        {activeScreen === 'audit' && (
-          <DeploymentAuditScreen 
+      {/* 2. Main Content Canvas (Framed inside rounded white card) */}
+      <div className="sl-main-canvas-wrapper">
+        <div className="sl-nested-canvas-card">
+          {/* Canvas Top Bar: Breadcrumbs, Search, Columns, App Switcher, SuperAgent */}
+          <MainTopBar 
+            savedViews={savedViews}
+            activeViewId={activeViewId}
+            onSelectView={selectView}
+            searchQuery={filters.search}
+            onSearchChange={(val) => updateFilter('search', val)}
+            onOpenColumnManager={() => setShowColumnManager(true)}
+            activeColumnsCount={visibleColumns.length}
+            totalColumnsCount={ALL_COLUMNS.length}
+            onOpenCopilot={() => setIsCopilotOpen(true)}
+            hisSyncActive={hisSyncActive}
             onTriggerHisSimulation={handleTriggerHisSimulation}
+            activeScreen={activeScreen}
+            onScreenChange={setActiveScreen}
           />
-        )}
-      </main>
 
-      {/* 4. Column Manager Modal */}
+          {/* Canvas Dynamic Body */}
+          <div className="sl-canvas-viewport">
+            {activeScreen === 'leads' && (
+              <div className="sl-screen-leads-view">
+                {/* Superleap Signature Filter Toolbar */}
+                <FilterToolbar 
+                  filters={filters}
+                  onUpdateFilter={updateFilter}
+                  onResetFilters={resetFilters}
+                  onOpenColumnManager={() => setShowColumnManager(true)}
+                  activeColumnsCount={visibleColumns.length}
+                  totalColumnsCount={ALL_COLUMNS.length}
+                  matchedCount={filteredLeads.length}
+                  totalCount={leads.length}
+                  onSaveCurrentView={(name) => saveAsNewView(name)}
+                />
+
+                {/* Clean Population of the Deals Table (Matching Image 1) */}
+                <LeadTable 
+                  leads={filteredLeads}
+                  visibleColumnIds={visibleColumns}
+                  onSelectLead={(lead) => setSelectedLead(lead)}
+                  onOpenBookConsultation={(lead) => setBookingLead(lead)}
+                  onQuickCall={handleQuickCall}
+                  onQuickWhatsApp={handleQuickWhatsApp}
+                />
+              </div>
+            )}
+
+            {/* Reports & Analytics Dashboard (Matching Image 3) */}
+            {activeScreen === 'reports_dashboard' && (
+              <ReportsDashboardView onNavigateToLeads={() => setActiveScreen('leads')} />
+            )}
+
+            {/* Clinic Day Overview */}
+            {activeScreen === 'clinic_day' && (
+              <ClinicDayOverview 
+                leads={leads}
+                onOpenBookConsultation={(lead) => setBookingLead(lead || leads[0])}
+                onSelectLead={(lead) => setSelectedLead(lead)}
+              />
+            )}
+
+            {/* Pipeline Kanban View */}
+            {activeScreen === 'pipeline' && (
+              <PatientJourneyKanban 
+                leads={filteredLeads}
+                onSelectLead={(lead) => setSelectedLead(lead)}
+                onOpenBookConsultation={(lead) => setBookingLead(lead)}
+              />
+            )}
+
+            {/* Deployment Audit Screen */}
+            {activeScreen === 'audit' && (
+              <DeploymentAuditScreen 
+                onTriggerHisSimulation={handleTriggerHisSimulation}
+              />
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Column Manager Modal (Requirement 1: 6 cols vs 40 cols) */}
       {showColumnManager && (
         <ManageColumnsModal 
           visibleColumns={visibleColumns}
@@ -318,7 +357,7 @@ export function App() {
         />
       )}
 
-      {/* 5. Book Consultation Modal */}
+      {/* 4. Book Consultation Modal (Requirement 3: Prominent 1-click booking) */}
       {bookingLead && (
         <BookConsultationModal 
           lead={bookingLead}
@@ -327,7 +366,7 @@ export function App() {
         />
       )}
 
-      {/* 6. Non-Destructive Slide-Over Drawer */}
+      {/* 5. Lead Record Detail Drawer (Matching Image 2) */}
       {selectedLead && (
         <LeadDetailDrawer 
           lead={selectedLead}
@@ -339,7 +378,7 @@ export function App() {
         />
       )}
 
-      {/* 7. SuperAgent AI Copilot Drawer */}
+      {/* 6. SuperAgent AI Copilot Drawer */}
       <SuperAgentCopilotDrawer 
         isOpen={isCopilotOpen}
         onClose={() => setIsCopilotOpen(false)}
@@ -348,7 +387,7 @@ export function App() {
         onQuickWhatsApp={handleQuickWhatsApp}
       />
 
-      {/* 8. Mobile Sticky Bottom Action Bar */}
+      {/* 7. Mobile Sticky Bottom Action Bar */}
       <MobileBottomActionBar 
         activeLead={mobileActiveLead}
         onOpenBookConsultation={(lead) => setBookingLead(lead)}
@@ -357,7 +396,7 @@ export function App() {
         onOpenColumnManager={() => setShowColumnManager(true)}
       />
 
-      {/* 9. Live Notification Toast */}
+      {/* 8. Live Notification Toast */}
       {toast && (
         <NotificationToast 
           toast={toast}

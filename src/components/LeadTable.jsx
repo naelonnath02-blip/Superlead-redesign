@@ -3,6 +3,9 @@ import {
   Calendar, 
   MessageSquare, 
   Phone, 
+  Mail,
+  Building2,
+  MoreHorizontal,
   CheckCircle2, 
   Clock, 
   Dna, 
@@ -10,26 +13,17 @@ import {
   ExternalLink, 
   Sparkles,
   User,
-  Building2,
-  CalendarCheck,
   Stethoscope,
   Microscope,
   FileSpreadsheet,
   HeartHandshake,
   MessageSquareText,
-  AlertCircle
+  Share2,
+  Tag,
+  Check
 } from 'lucide-react';
 import { PATIENT_STAGES } from '../data/mockLeads';
 import { ALL_COLUMNS } from '../data/columnsDefinition';
-
-const STAGE_ICON_MAP = {
-  MessageSquareText: MessageSquareText,
-  Stethoscope: Stethoscope,
-  Microscope: Microscope,
-  FileSpreadsheet: FileSpreadsheet,
-  Dna: Dna,
-  HeartHandshake: HeartHandshake
-};
 
 export function LeadTable({
   leads,
@@ -39,18 +33,23 @@ export function LeadTable({
   onQuickCall,
   onQuickWhatsApp
 }) {
-  const [sortField, setSortField] = useState('intent_score');
+  const [sortField, setSortField] = useState(null);
   const [sortAsc, setSortAsc] = useState(false);
+  const [selectedLeadIds, setSelectedLeadIds] = useState(new Set());
+  const [activeMenuLeadId, setActiveMenuLeadId] = useState(null);
 
-  // Sorting
-  const sortedLeads = [...leads].sort((a, b) => {
-    let aVal = a[sortField];
-    let bVal = b[sortField];
-    if (typeof aVal === 'string') {
-      return sortAsc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-    }
-    return sortAsc ? (aVal - bVal) : (bVal - aVal);
-  });
+  // Sorting: when sortField is null, preserves exact Image 1 order
+  const sortedLeads = React.useMemo(() => {
+    if (!sortField) return leads;
+    return [...leads].sort((a, b) => {
+      let aVal = a[sortField];
+      let bVal = b[sortField];
+      if (typeof aVal === 'string') {
+        return sortAsc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+      }
+      return sortAsc ? (aVal - bVal) : (bVal - aVal);
+    });
+  }, [leads, sortField, sortAsc]);
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -61,72 +60,224 @@ export function LeadTable({
     }
   };
 
+  const toggleSelectAll = () => {
+    if (selectedLeadIds.size === leads.length) {
+      setSelectedLeadIds(new Set());
+    } else {
+      setSelectedLeadIds(new Set(leads.map(l => l.id)));
+    }
+  };
+
+  const toggleSelectOne = (leadId, e) => {
+    e.stopPropagation();
+    const next = new Set(selectedLeadIds);
+    if (next.has(leadId)) {
+      next.delete(leadId);
+    } else {
+      next.add(leadId);
+    }
+    setSelectedLeadIds(next);
+  };
+
+  // Render Channel Tag matching Image 1
+  const renderChannelTag = (lead) => {
+    const src = lead.lead_source || 'Website';
+    let icon = null;
+    let badgeClass = 'sl-tag-blue';
+
+    if (src.includes('Email')) {
+      icon = <Mail size={12} />;
+      badgeClass = 'sl-tag-email';
+    } else if (src.includes('Affiliate')) {
+      icon = <Share2 size={12} />;
+      badgeClass = 'sl-tag-affiliate';
+    } else if (src.includes('Facebook') || src.includes('Meta')) {
+      icon = <span className="sl-tag-fb-icon">f</span>;
+      badgeClass = 'sl-tag-facebook';
+    } else if (src.includes('WhatsApp')) {
+      icon = <MessageSquare size={12} />;
+      badgeClass = 'sl-tag-whatsapp';
+    } else if (src.includes('Content') || src.includes('Blog')) {
+      icon = <Tag size={12} />;
+      badgeClass = 'sl-tag-content';
+    } else if (src.includes('Doctor') || src.includes('Referral')) {
+      icon = <Stethoscope size={12} />;
+      badgeClass = 'sl-tag-referral';
+    } else {
+      icon = <Tag size={12} />;
+      badgeClass = 'sl-tag-default';
+    }
+
+    return (
+      <span className={`sl-channel-pill ${badgeClass}`}>
+        {icon}
+        <span>{src}</span>
+      </span>
+    );
+  };
+
+  // Render Stage Pill matching Image 1
+  const renderStagePill = (stageId) => {
+    const stageInfo = PATIENT_STAGES[stageId] || PATIENT_STAGES.enquiry;
+    
+    // Map stage labels to clean Superleap tag styling
+    let pillClass = 'sl-stage-blue';
+    if (stageId === 'first_consultation') pillClass = 'sl-stage-amber';
+    if (stageId === 'diagnostics') pillClass = 'sl-stage-purple';
+    if (stageId === 'treatment_plan') pillClass = 'sl-stage-indigo';
+    if (stageId === 'ivf_cycle') pillClass = 'sl-stage-teal';
+    if (stageId === 'converted') pillClass = 'sl-stage-emerald';
+
+    return (
+      <span className={`sl-stage-pill ${pillClass}`}>
+        {stageInfo.label}
+      </span>
+    );
+  };
+
   // Render cell content based on column id
   const renderCellContent = (lead, colId) => {
     switch (colId) {
       case 'patient':
         return (
-          <div className="sl-cell-patient">
-            <div className="sl-patient-avatar">
-              {lead.patient_name.charAt(0)}
-            </div>
-            <div className="sl-patient-meta">
-              <div className="sl-patient-title-row">
-                <span className="sl-patient-name">{lead.patient_name}</span>
-                {lead.migration_clean_status?.includes('Restored') && (
-                  <span 
-                    className="sl-restored-tag"
-                    title={`Restored from Zoho UTF-8 corrupted encoding: ${lead.raw_corrupted_name}`}
+          <div className="sl-cell-lead-name-group">
+            <span className="sl-lead-full-name">{lead.patient_name}</span>
+            
+            {/* Quick Action Three-dots button right next to name (Image 1) */}
+            <div className="sl-lead-more-btn-wrap" onClick={(e) => e.stopPropagation()}>
+              <button 
+                type="button"
+                className="sl-lead-dots-btn"
+                onClick={() => setActiveMenuLeadId(activeMenuLeadId === lead.id ? null : lead.id)}
+                title="Quick Actions"
+              >
+                <MoreHorizontal size={13} />
+              </button>
+
+              {activeMenuLeadId === lead.id && (
+                <div className="sl-lead-row-popover">
+                  <button 
+                    type="button" 
+                    className="sl-row-popover-item"
+                    onClick={() => {
+                      onSelectLead(lead);
+                      setActiveMenuLeadId(null);
+                    }}
                   >
-                    UTF-8 Fixed
-                  </span>
-                )}
-              </div>
-              <div className="sl-patient-sub-row">
-                <span className="sl-patient-id">{lead.id}</span>
-                <span className="sl-dot-sep">•</span>
-                <span className="sl-patient-age">{lead.age} yrs</span>
-                {lead.primary_concern && (
-                  <>
-                    <span className="sl-dot-sep">•</span>
-                    <span className="sl-patient-concern" title={lead.primary_concern}>
-                      {lead.primary_concern}
-                    </span>
-                  </>
-                )}
-              </div>
+                    <span>Open Lead Record</span>
+                  </button>
+                  <button 
+                    type="button" 
+                    className="sl-row-popover-item is-primary"
+                    onClick={() => {
+                      onOpenBookConsultation(lead);
+                      setActiveMenuLeadId(null);
+                    }}
+                  >
+                    <span>Book Consultation</span>
+                  </button>
+                  <button 
+                    type="button" 
+                    className="sl-row-popover-item"
+                    onClick={() => {
+                      onQuickWhatsApp(lead);
+                      setActiveMenuLeadId(null);
+                    }}
+                  >
+                    <span>WhatsApp Message</span>
+                  </button>
+                  <button 
+                    type="button" 
+                    className="sl-row-popover-item"
+                    onClick={() => {
+                      onQuickCall(lead);
+                      setActiveMenuLeadId(null);
+                    }}
+                  >
+                    <span>Exotel CTI Call</span>
+                  </button>
+                </div>
+              )}
             </div>
+
+            {lead.migration_clean_status?.includes('Restored') && (
+              <span className="sl-tag-utf8" title="Restored corrupted encoding from Zoho">UTF-8</span>
+            )}
           </div>
         );
 
-      case 'contact':
+      case 'phone':
         return (
-          <div className="sl-cell-contact">
-            <div className="sl-contact-phone">{lead.phone}</div>
-            <div className="sl-contact-actions">
-              <button 
-                className="sl-contact-icon-btn is-wa"
-                title="Open WhatsApp Web chat"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onQuickWhatsApp(lead);
-                }}
-              >
-                <MessageSquare size={13} />
-                <span>WA</span>
-              </button>
-              <button 
-                className="sl-contact-icon-btn is-call"
-                title="Initiate Exotel click-to-call"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onQuickCall(lead);
-                }}
-              >
-                <Phone size={13} />
-                <span>Call</span>
-              </button>
-            </div>
+          <div className="sl-cell-phone">
+            <Phone size={13} className="sl-cell-icon-phone" />
+            <span 
+              className="sl-phone-text"
+              onClick={(e) => {
+                e.stopPropagation();
+                onQuickCall(lead);
+              }}
+              title="Click to initiate Exotel call"
+            >
+              {lead.phone}
+            </span>
+          </div>
+        );
+
+      case 'email':
+        return (
+          <div className="sl-cell-email">
+            <Mail size={13} className="sl-cell-icon-mail" />
+            <a 
+              href={`mailto:${lead.email || `${lead.patient_name.toLowerCase().replace(/[^a-z]/g, '')}@gmail.com`}`}
+              className="sl-email-link"
+              onClick={(e) => e.stopPropagation()}
+              title="Send email"
+            >
+              {lead.email || `${lead.patient_name.toLowerCase().replace(/[^a-z]/g, '')}@gmail.com`}
+            </a>
+          </div>
+        );
+
+      case 'city':
+        return (
+          <div className="sl-cell-city">
+            <Building2 size={13} className="sl-cell-icon-city" />
+            <span className="sl-city-text">{lead.city}</span>
+          </div>
+        );
+
+      case 'lead_source':
+        return renderChannelTag(lead);
+
+      case 'stage':
+        return renderStagePill(lead.stage);
+
+      case 'actions':
+        return (
+          <div className="sl-cell-actions-row">
+            {/* Requirement 3: Book Consultation Button prominently on the respective page */}
+            <button 
+              type="button"
+              className="sl-btn-book-consult-table"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenBookConsultation(lead);
+              }}
+              title={`Schedule consultation for ${lead.patient_name}`}
+            >
+              <Stethoscope size={13} />
+              <span>Book Consultation</span>
+            </button>
+          </div>
+        );
+
+      case 'intent_score':
+        return (
+          <div className="sl-cell-score">
+            <span className={`sl-score-chip ${lead.intent_score >= 90 ? 'is-hot' : 'is-warm'}`}>
+              <Sparkles size={11} />
+              <span>{lead.intent_score}%</span>
+            </span>
           </div>
         );
 
@@ -134,126 +285,48 @@ export function LeadTable({
         return (
           <div className="sl-cell-clinic">
             <span className="sl-clinic-branch">{lead.clinic_name}</span>
-            <span className="sl-clinic-manager">Lead: {lead.clinic_manager}</span>
           </div>
         );
 
-      case 'stage': {
-        const stageInfo = PATIENT_STAGES[lead.stage] || PATIENT_STAGES.enquiry;
-        const IconComponent = STAGE_ICON_MAP[stageInfo.icon] || MessageSquareText;
-
+      case 'contact':
         return (
-          <div 
-            className="sl-stage-badge" 
-            style={{ 
-              backgroundColor: stageInfo.bgColor, 
-              color: stageInfo.color,
-              borderColor: stageInfo.borderColor
-            }}
-          >
-            <IconComponent size={14} className="sl-stage-icon" />
-            <span className="sl-stage-text">{stageInfo.label}</span>
-          </div>
-        );
-      }
-
-      case 'intent_score': {
-        const score = lead.intent_score;
-        let scoreClass = 'score-warm';
-        if (score >= 90) scoreClass = 'score-urgent';
-        else if (score >= 80) scoreClass = 'score-high';
-
-        return (
-          <div className="sl-cell-score">
-            <div className={`sl-score-pill ${scoreClass}`} title={lead.lead_score_reason}>
-              <span className="sl-score-num">{score}</span>
-              <span className="sl-score-total">/100</span>
-            </div>
-            <span className="sl-score-sub">{score >= 90 ? 'Urgent' : score >= 80 ? 'High' : 'Warm'}</span>
-          </div>
-        );
-      }
-
-      case 'actions':
-        return (
-          <div className="sl-cell-actions" onClick={(e) => e.stopPropagation()}>
-            <button 
-              className="sl-btn sl-btn-book-action"
-              onClick={() => onOpenBookConsultation(lead)}
-              title="Schedule consultation for this patient"
-            >
-              <Calendar size={14} />
-              <span>Book Consultation</span>
-            </button>
+          <div className="sl-cell-contact">
+            <span className="sl-contact-phone">{lead.phone}</span>
           </div>
         );
 
       case 'assigned_doctor':
         return (
           <div className="sl-cell-doctor">
-            <span className="sl-doctor-name">{lead.assigned_doctor || 'Unassigned'}</span>
-            <span className="sl-counsellor-sub">{lead.assigned_counsellor}</span>
+            <span>{lead.assigned_doctor || 'Dr. Kavitha Menon'}</span>
           </div>
         );
 
       case 'next_followup':
         return (
           <div className="sl-cell-followup">
-            <span className="sl-followup-time">{lead.next_followup || 'None Scheduled'}</span>
-            <span className="sl-followup-mode">{lead.consultation_mode}</span>
-          </div>
-        );
-
-      case 'lead_source':
-        return (
-          <div className="sl-cell-source">
-            <span className="sl-source-badge">{lead.lead_source}</span>
-            <span className="sl-campaign-name">{lead.campaign_name}</span>
+            <span>{lead.next_followup || 'None Scheduled'}</span>
           </div>
         );
 
       case 'his_sync': {
         const isCycleActive = lead.his_sync === 'cycle_active';
-        const isSynced = lead.his_sync === 'synced';
-
         return (
           <div className="sl-cell-his">
             {isCycleActive ? (
-              <span className="sl-his-badge is-active" title={`Cycle started on ${lead.his_cycle_start}`}>
-                <Dna size={13} />
-                <span>IVF Cycle Active</span>
-              </span>
-            ) : isSynced ? (
-              <span className="sl-his-badge is-synced" title="Hospital MRN Linked">
-                <CheckCircle2 size={13} />
-                <span>HIS Synced</span>
+              <span className="sl-his-badge is-active">
+                <Dna size={12} />
+                <span>Cycle Active</span>
               </span>
             ) : (
-              <span className="sl-his-badge is-pending" title="Awaiting registration">
-                <Clock size={13} />
-                <span>Pending Sync</span>
+              <span className="sl-his-badge is-synced">
+                <CheckCircle2 size={12} />
+                <span>Synced</span>
               </span>
-            )}
-            {lead.his_patient_id && (
-              <span className="sl-his-mrn">{lead.his_patient_id}</span>
             )}
           </div>
         );
       }
-
-      case 'cycle_value':
-        return (
-          <span className="sl-cell-currency">
-            ₹{Number(lead.cycle_value || 0).toLocaleString('en-IN')}
-          </span>
-        );
-
-      case 'notes_summary':
-        return (
-          <span className="sl-cell-notes" title={lead.notes_summary}>
-            {lead.notes_summary}
-          </span>
-        );
 
       default:
         return (
@@ -277,14 +350,25 @@ export function LeadTable({
   }
 
   return (
-    <div className="sl-table-container">
-      <div className="sl-table-scroll-wrapper">
-        <table className="sl-leads-table">
+    <div className="sl-table-viewport">
+      <div className="sl-table-scroll-container">
+        <table className="sl-authentic-table">
           <thead>
             <tr>
+              {/* Checkbox Column */}
+              <th className="sl-th-checkbox">
+                <input 
+                  type="checkbox"
+                  checked={selectedLeadIds.size === leads.length && leads.length > 0}
+                  onChange={toggleSelectAll}
+                  className="sl-row-checkbox"
+                />
+              </th>
+
+              {/* Dynamic Columns */}
               {visibleColumnIds.map((colId) => {
                 const colDef = ALL_COLUMNS.find(c => c.id === colId);
-                const isSortable = ['patient', 'intent_score', 'created_at', 'cycle_value'].includes(colId);
+                const isSortable = ['patient', 'intent_score', 'city', 'stage'].includes(colId);
 
                 return (
                   <th 
@@ -293,10 +377,13 @@ export function LeadTable({
                     onClick={() => isSortable && handleSort(colId === 'patient' ? 'patient_name' : colId)}
                     style={{ minWidth: colDef?.width || 150 }}
                   >
-                    <div className="sl-th-inner">
-                      <span>{colDef?.label || colId}</span>
+                    <div className="sl-th-content">
+                      {colId === 'phone' && <Phone size={12} className="sl-th-icon" />}
+                      {colId === 'email' && <Mail size={12} className="sl-th-icon" />}
+                      {colId === 'city' && <Building2 size={12} className="sl-th-icon" />}
+                      <span>{colDef?.label || colId.toUpperCase()}</span>
                       {isSortable && (
-                        <ArrowUpDown size={12} className="sl-sort-icon" />
+                        <ArrowUpDown size={11} className="sl-sort-indicator" />
                       )}
                     </div>
                   </th>
@@ -306,28 +393,57 @@ export function LeadTable({
           </thead>
 
           <tbody>
-            {sortedLeads.map((lead) => (
-              <tr 
-                key={lead.id} 
-                className="sl-lead-row"
-                onClick={() => onSelectLead(lead)}
-              >
-                {visibleColumnIds.map((colId) => {
-                  const colDef = ALL_COLUMNS.find(c => c.id === colId);
+            {sortedLeads.map((lead) => {
+              const isSelected = selectedLeadIds.has(lead.id);
 
-                  return (
-                    <td 
-                      key={colId} 
-                      className={`sl-td sl-td-${colId} ${colDef?.alwaysVisible ? 'is-sticky-col' : ''}`}
-                    >
-                      {renderCellContent(lead, colId)}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
+              return (
+                <tr 
+                  key={lead.id} 
+                  className={`sl-table-row ${isSelected ? 'is-row-selected' : ''}`}
+                  onClick={() => onSelectLead(lead)}
+                >
+                  {/* Checkbox Cell */}
+                  <td className="sl-td-checkbox" onClick={(e) => e.stopPropagation()}>
+                    <input 
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={(e) => toggleSelectOne(lead.id, e)}
+                      className="sl-row-checkbox"
+                    />
+                  </td>
+
+                  {/* Render Visible Column Cells */}
+                  {visibleColumnIds.map((colId) => {
+                    const colDef = ALL_COLUMNS.find(c => c.id === colId);
+
+                    return (
+                      <td 
+                        key={colId} 
+                        className={`sl-td sl-td-${colId} ${colDef?.alwaysVisible ? 'is-sticky-col' : ''}`}
+                      >
+                        {renderCellContent(lead, colId)}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
+      </div>
+
+      {/* Clean Superleap Table Footer */}
+      <div className="sl-table-footer-bar">
+        <span className="sl-footer-stats">
+          {selectedLeadIds.size > 0 ? (
+            <span><strong>{selectedLeadIds.size}</strong> leads selected</span>
+          ) : (
+            <span>Showing 1 to {sortedLeads.length} of {leads.length} records</span>
+          )}
+        </span>
+        <div className="sl-footer-pagination">
+          <span className="sl-page-info">Page 1 of 1</span>
+        </div>
       </div>
     </div>
   );

@@ -21,8 +21,8 @@ const DEFAULT_FILTERS = {
 const DEFAULT_SAVED_VIEWS = [
   {
     id: 'view_all',
-    name: 'All Patient Journeys',
-    icon: 'Users',
+    name: 'All Leads',
+    icon: 'Percent',
     isDefault: true,
     filters: { ...DEFAULT_FILTERS }
   },
@@ -73,7 +73,12 @@ export function usePersistentState() {
   const [visibleColumns, setVisibleColumns] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_COLUMNS);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.includes('phone') && parsed.includes('email')) {
+          return parsed;
+        }
+      }
       return ROLE_PRESETS.counsellor.columns;
     } catch {
       return ROLE_PRESETS.counsellor.columns;
