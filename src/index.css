@@ -1,0 +1,165 @@
+/* ==========================================================================
+   Superleap AI CRM Design System - Official superleap.com Visual Language
+   Tailored for Nova Fertility Enterprise Deployment
+   ========================================================================== */
+
+:root {
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Official Superleap Brand Tokens (from superleap.com) */
+  --sl-brand-mint: #4bb793;
+  --sl-brand-mint-hover: #3da381;
+  --sl-brand-mint-light: #eef9f5;
+  --sl-brand-mint-border: #bbf0df;
+  --sl-brand-lime: #91b970;
+  
+  --sl-dark-bg: #071a1d;       /* Superleap Hero Dark Teal-Black */
+  --sl-dark-surface: #0c2429;  /* Superleap Navbar / Surface Dark */
+  --sl-dark-border: #1a3c42;   /* Superleap Subtle Dark Border */
+  --sl-dark-hover: #12343b;
+
+  /* Light Theme Workspace (Reduced Cognitive Load, Ultra-Clean) */
+  --bg-app: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-surface-subtle: #f1f5f9;
+  --bg-hover: #f8fafc;
+  
+  --text-main: #111827;        /* Crisp High-Contrast Charcoal */
+  --text-secondary: #4b5563;   /* Slate Gray */
+  --text-muted: #6b7280;      /* Muted Label */
+  --text-light: #9ca3af;
+
+  --border-subtle: #e5e7eb;    /* Clean 1px border */
+  --border-medium: #d1d5db;
+  --border-strong: #9ca3af;
+
+  /* Healthcare Journey Semantic Stages */
+  --stage-enquiry: #2563eb;
+  --stage-enquiry-bg: #eff6ff;
+  --stage-enquiry-border: #bfdbfe;
+
+  --stage-consult: #d97706;
+  --stage-consult-bg: #fffbeb;
+  --stage-consult-border: #fde68a;
+
+  --stage-diag: #7c3aed;
+  --stage-diag-bg: #f5f3ff;
+  --stage-diag-border: #ddd6fe;
+
+  --stage-plan: #4338ca;
+  --stage-plan-bg: #eef2ff;
+  --stage-plan-border: #c7d2fe;
+
+  --stage-ivf: #0d9488;
+  --stage-ivf-bg: #f0fdfa;
+  --stage-ivf-border: #99f6e4;
+
+  --stage-converted: #059669;
+  --stage-converted-bg: #ecfdf5;
+  --stage-converted-border: #a7f3d0;
+
+  /* Elevation & Shadows */
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+  --shadow-drawer: -8px 0 28px rgba(7, 26, 29, 0.16);
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 220ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Reset & Box Sizing */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.25;
+}
+
+p {
+  color: var(--text-secondary);
+}
+
+button {
+  font-family: var(--font-sans);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  transition: all var(--transition-fast);
+}
+
+input, select, textarea {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--text-main);
+}
+
+/* Slim, elegant scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* App Root Structure */
+.sl-app-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--bg-app);
+}
+
+.sl-main-viewport {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 28px 80px 28px;
+  max-width: 1680px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .sl-main-viewport {
+    padding: 10px 12px 100px 12px;
+  }
+}
