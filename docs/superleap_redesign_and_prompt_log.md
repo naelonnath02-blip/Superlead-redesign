@@ -90,12 +90,20 @@ Following the authentic UI screenshots of the Superleap production application, 
 
 ### Problem 1: Manage Visible Columns ("Why 40 columns? Agents need 6")
 - **Solution:** 
-  - One-click Column Manager modal with role presets:
+  - **Explicit Inline Dropdown (Matching Leadrat / Modern CRM Reference):**
+    - Direct **`Manage Columns ▾`** button positioned prominently in the toolbar above the table.
+    - Attached dropdown popover with instant inline toggles:
+      - **`Select All`** checkbox with indeterminate states and live count `(7/40)`.
+      - **Quick Presets**: `Clean Deals (7)` (Image 1 view), `Counsellor (6)`, `All (40)`.
+      - **Search Input**: Instant filter across all 40 Zoho CRM fields (e.g. typing "AMH" or "Phone" immediately filters the list).
+      - **Live Checkbox Toggling**: Checking or unchecking immediately updates the live table in 0ms without closing the menu.
+      - **Category Tags & Lock Badges**: Clear visual tags (`Clinical`, `Contact`, `Operational`, `Financial`, `System`, `Telephony`) and lock icon for required columns (`LEAD NAME`).
+  - **One-Click Role Presets & Advanced Reordering:**
     - **Call Agent (6 cols):** `LEAD NAME`, `PHONE`, `CITY`, `STAGE`, `INTENT SCORE`, `ACTION`.
     - **Clinic Counsellor (7 cols):** `LEAD NAME`, `PHONE`, `EMAIL`, `CITY`, `CHANNEL`, `STAGE`, `ACTION` (matches Image 1).
     - **Clinic Manager (10 cols):** Adds `Assigned Specialist`, `HIS Sync Status`, and `Est. Package`.
     - **Zoho Legacy (40 cols):** Visualizes the full bloated 40-column wall to contrast agent fatigue with Superleap’s streamlined experience.
-  - Column selections persist in localStorage.
+  - Selections persist across sessions in `localStorage`.
 
 ### Problem 2: Save Filter Without Breaking Views (0% Filter Loss)
 - **Solution:**

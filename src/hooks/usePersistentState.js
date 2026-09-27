@@ -241,22 +241,55 @@ export function usePersistentState() {
     }
   }, [savedViews]);
 
-  // Save current filter state as a new view
-  const saveAsNewView = useCallback((name) => {
+  // Save current filter state as a new view (optionally pinning as default view)
+  const saveAsNewView = useCallback((name, setAsDefault = false) => {
     const newId = `view_${Date.now()}`;
     const newView = {
       id: newId,
       name,
       icon: 'Bookmark',
-      isDefault: false,
+      isDefault: Boolean(setAsDefault),
       filters: { ...filters }
     };
-    const updated = [...savedViews, newView];
+
+    let updated = [...savedViews];
+    if (setAsDefault) {
+      updated = updated.map(v => ({ ...v, isDefault: false }));
+    }
+    updated.push(newView);
+
     setSavedViews(updated);
     setActiveViewId(newId);
     localStorage.setItem(STORAGE_KEY_SAVED_VIEWS, JSON.stringify(updated));
     localStorage.setItem(STORAGE_KEY_ACTIVE_VIEW, newId);
   }, [filters, savedViews]);
+
+  // Toggle pinning a view as the default view
+  const togglePinDefaultView = useCallback((viewId) => {
+    setSavedViews(prev => {
+      const target = prev.find(v => v.id === viewId);
+      const isCurrentlyDefault = target?.isDefault;
+      const updated = prev.map(v => {
+        if (v.id === viewId) {
+          return { ...v, isDefault: !isCurrentlyDefault };
+        }
+        // If we are pinning this view as default, unpin others as default
+        return !isCurrentlyDefault ? { ...v, isDefault: false } : v;
+      });
+      localStorage.setItem(STORAGE_KEY_SAVED_VIEWS, JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  // Rename a saved view
+  const renameSavedView = useCallback((viewId, newName) => {
+    if (!newName.trim()) return;
+    setSavedViews(prev => {
+      const updated = prev.map(v => v.id === viewId ? { ...v, name: newName.trim() } : v);
+      localStorage.setItem(STORAGE_KEY_SAVED_VIEWS, JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
 
   // Update existing active view with current filters
   const updateCurrentView = useCallback(() => {
@@ -293,6 +326,8 @@ export function usePersistentState() {
     activeViewId,
     selectView,
     saveAsNewView,
+    togglePinDefaultView,
+    renameSavedView,
     updateCurrentView,
     deleteSavedView,
     isFilterModified

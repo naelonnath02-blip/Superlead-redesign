@@ -6,11 +6,7 @@ import {
   FileSpreadsheet, 
   Dna, 
   HeartHandshake, 
-  Calendar, 
-  Building2, 
-  Flame, 
-  UserCheck,
-  ChevronRight
+  Flame
 } from 'lucide-react';
 import { PATIENT_STAGES } from '../data/mockLeads';
 
@@ -76,42 +72,18 @@ export function PatientJourneyKanban({
                       <div className="sl-card-top-row">
                         <span className="sl-card-patient-name">{lead.patient_name}</span>
                         <div className={`sl-card-score-pill ${isUrgent ? 'is-urgent' : ''}`}>
-                          <Flame size={12} />
-                          <span>{score}</span>
+                          {isUrgent && <Flame size={11} />}
+                          <span>{score}%</span>
                         </div>
                       </div>
 
-                      <div className="sl-card-demographics">
-                        <span>{lead.age}y</span>
-                        <span>•</span>
-                        <span>{lead.city}</span>
-                        <span>•</span>
-                        <span className="sl-card-concern">{lead.primary_concern}</span>
-                      </div>
+                      <p className="sl-card-concern">{lead.primary_concern}</p>
 
-                      <div className="sl-card-doctor-row">
-                        <UserCheck size={12} className="sl-card-doc-icon" />
-                        <span>{lead.assigned_doctor || 'Doctor Pending'}</span>
-                      </div>
-
-                      {lead.next_followup && (
-                        <div className="sl-card-slot-row">
-                          <span className="sl-slot-label">Slot:</span>
-                          <span className="sl-slot-val">{lead.next_followup}</span>
-                        </div>
-                      )}
-
-                      {/* Card Footer with 1-Click Consultation CTA */}
-                      <div className="sl-card-footer" onClick={(e) => e.stopPropagation()}>
-                        <span className="sl-card-mrn">{lead.id}</span>
-                        <button 
-                          className="sl-card-book-btn"
-                          onClick={() => onOpenBookConsultation(lead)}
-                          title="Schedule consultation"
-                        >
-                          <Calendar size={13} />
-                          <span>Book Consult</span>
-                        </button>
+                      <div className="sl-card-meta-row">
+                        <span className="sl-card-clinic">{lead.clinic_name || lead.city}</span>
+                        {lead.assigned_doctor && (
+                          <span className="sl-card-doctor">{lead.assigned_doctor}</span>
+                        )}
                       </div>
                     </div>
                   );

@@ -3,8 +3,7 @@ import {
   X, 
   Search, 
   Check, 
-  ArrowUp, 
-  ArrowDown, 
+  GripVertical, 
   RotateCcw, 
   SlidersHorizontal,
   Info,
@@ -24,6 +23,8 @@ export function ManageColumnsModal({
   const [selectedColumnIds, setSelectedColumnIds] = useState([...visibleColumns]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
 
   // Categories list
   const categories = ['All', 'Essential', 'Clinical', 'Contact', 'Operational', 'System', 'Financial', 'Telephony'];
@@ -40,24 +41,41 @@ export function ManageColumnsModal({
     }
   };
 
-  // Move column up in order
-  const moveUp = (index) => {
-    if (index === 0) return;
-    const newCols = [...selectedColumnIds];
-    const temp = newCols[index];
-    newCols[index] = newCols[index - 1];
-    newCols[index - 1] = temp;
-    setSelectedColumnIds(newCols);
+  // Drag and Drop handlers
+  const handleDragStart = (e, index) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', index.toString());
   };
 
-  // Move column down in order
-  const moveDown = (index) => {
-    if (index === selectedColumnIds.length - 1) return;
-    const newCols = [...selectedColumnIds];
-    const temp = newCols[index];
-    newCols[index] = newCols[index + 1];
-    newCols[index + 1] = temp;
-    setSelectedColumnIds(newCols);
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverIndex !== index) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleDrop = (e, targetIndex) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === targetIndex) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    const updatedCols = [...selectedColumnIds];
+    const [draggedItem] = updatedCols.splice(draggedIndex, 1);
+    updatedCols.splice(targetIndex, 0, draggedItem);
+
+    setSelectedColumnIds(updatedCols);
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
   };
 
   // Apply a role preset
@@ -200,7 +218,7 @@ export function ManageColumnsModal({
               <span className="sl-panel-title">
                 Active Display Order ({selectedColumnIds.length} columns)
               </span>
-              <span className="sl-hint-sub">Use arrows to reorder table</span>
+              <span className="sl-hint-sub">Drag and drop to reorder</span>
             </div>
 
             <div className="sl-active-order-list">
@@ -209,7 +227,19 @@ export function ManageColumnsModal({
                 if (!col) return null;
 
                 return (
-                  <div key={col.id} className="sl-order-item">
+                  <div 
+                    key={col.id} 
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, index)}
+                    onDragOver={(e) => handleDragOver(e, index)}
+                    onDrop={(e) => handleDrop(e, index)}
+                    onDragEnd={handleDragEnd}
+                    className={`sl-order-item is-draggable ${draggedIndex === index ? 'is-dragging' : ''} ${dragOverIndex === index ? 'is-drag-over' : ''}`}
+                    title="Drag and drop to reorder column order"
+                  >
+                    <div className="sl-drag-handle" title="Drag to reorder">
+                      <GripVertical size={16} />
+                    </div>
                     <span className="sl-order-num">{index + 1}</span>
                     <div className="sl-order-info">
                       <span className="sl-order-label">{col.label}</span>
@@ -217,24 +247,6 @@ export function ManageColumnsModal({
                     </div>
 
                     <div className="sl-order-actions">
-                      <button 
-                        type="button" 
-                        disabled={index === 0} 
-                        onClick={() => moveUp(index)}
-                        title="Move column left/earlier"
-                        className="sl-arrow-btn"
-                      >
-                        <ArrowUp size={14} />
-                      </button>
-                      <button 
-                        type="button" 
-                        disabled={index === selectedColumnIds.length - 1} 
-                        onClick={() => moveDown(index)}
-                        title="Move column right/later"
-                        className="sl-arrow-btn"
-                      >
-                        <ArrowDown size={14} />
-                      </button>
                       {!col.alwaysVisible && (
                         <button 
                           type="button" 

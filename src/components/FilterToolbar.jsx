@@ -11,24 +11,35 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { PATIENT_STAGES, CLINIC_LOCATIONS } from '../data/mockLeads';
+import { ManageColumnsDropdown } from './ManageColumnsDropdown';
+import { AddFilterModal } from './AddFilterModal';
+import { UnifiedFilterDropdown } from './UnifiedFilterDropdown';
 
 export function FilterToolbar({
   filters,
   onUpdateFilter,
   onResetFilters,
   onOpenColumnManager,
+  visibleColumns = [],
+  onUpdateColumns,
+  savedViews = [],
+  activeViewId,
+  onSelectView,
+  onTogglePinDefault,
+  onRenameView,
+  onDeleteView,
+  onSaveCurrentView,
   activeColumnsCount,
   totalColumnsCount,
   matchedCount,
   totalCount,
-  onSaveCurrentView,
   sortField,
   sortAsc,
   onToggleSort
 }) {
   const [showAddFilterMenu, setShowAddFilterMenu] = useState(false);
-  const [editingPill, setEditingPill] = useState(null); // 'stage' | 'clinic' | 'source' | 'minScore' | 'performance'
-  const [performanceFilter, setPerformanceFilter] = useState('Excellent');
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [performanceFilter, setPerformanceFilter] = useState('all');
 
   // Check which filters are actively set
   const hasActiveFilters = 
@@ -302,31 +313,61 @@ export function FilterToolbar({
         )}
       </div>
 
-      {/* Right Controls: Save Filter & Count */}
+      {/* Right Controls: Manage Columns, Save Filter & Count */}
       <div className="sl-filter-bar-right">
-        {/* Requirement 2: Save Filter Button (0% filter loss across views) */}
-        <button 
-          type="button"
-          className="sl-btn-save-filter"
-          onClick={() => {
-            const viewName = prompt("Name this filtered view for Nova Fertility:", "Nova First Consultations");
-            if (viewName && onSaveCurrentView) {
-              onSaveCurrentView(viewName);
-            } else {
-              alert("✓ Filter view saved with 0% loss guarantee across sessions!");
-            }
+        {/* Requirement 1: Explicit Manage Columns Dropdown (Matching User Screenshot) */}
+        {onUpdateColumns ? (
+          <ManageColumnsDropdown 
+            visibleColumns={visibleColumns}
+            onUpdateColumns={onUpdateColumns}
+            onOpenAdvancedModal={onOpenColumnManager}
+          />
+        ) : (
+          <button 
+            type="button"
+            className="sl-manage-columns-btn"
+            onClick={onOpenColumnManager}
+            title="Manage visible table columns"
+          >
+            <span>Manage Columns</span>
+            <ChevronDown size={14} />
+          </button>
+        )}
+
+        {/* Unified Filter Dropdown (Clubbed Filter, Saved Views, Pinning, and Clear) */}
+        <UnifiedFilterDropdown 
+          filters={filters}
+          hasActiveFilters={hasActiveFilters}
+          onResetFilters={() => {
+            onResetFilters();
+            setPerformanceFilter('all');
           }}
-          title="Save current filters as persistent view (0% filter loss)"
-        >
-          <Bookmark size={13} />
-          <span>Save Filter</span>
-        </button>
+          onUpdateFilter={onUpdateFilter}
+          savedViews={savedViews}
+          activeViewId={activeViewId}
+          onSelectView={onSelectView}
+          onTogglePinDefault={onTogglePinDefault}
+          onRenameView={onRenameView}
+          onDeleteView={onDeleteView}
+          onOpenSaveModal={() => setShowSaveModal(true)}
+        />
 
         {/* Matched Count */}
         <span className="sl-matched-count-text">
           Showing <strong>{matchedCount}</strong> of {totalCount} deals
         </span>
       </div>
+
+      {/* Add Filter Name Modal (Matching Screenshot 2) */}
+      <AddFilterModal 
+        isOpen={showSaveModal}
+        onClose={() => setShowSaveModal(false)}
+        onSave={(name, setAsDefault) => {
+          if (onSaveCurrentView) {
+            onSaveCurrentView(name, setAsDefault);
+          }
+        }}
+      />
     </div>
   );
 }

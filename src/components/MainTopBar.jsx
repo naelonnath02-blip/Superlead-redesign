@@ -4,17 +4,14 @@ import {
   Search, 
   Layers, 
   Sparkles, 
-  Grid, 
   Percent, 
   Activity, 
   MessageSquare, 
-  PhoneCall, 
-  GitFork, 
   BarChart2, 
-  Sliders, 
   Check, 
   Plus,
-  X
+  X,
+  Menu
 } from 'lucide-react';
 
 export function MainTopBar({
@@ -30,10 +27,10 @@ export function MainTopBar({
   hisSyncActive = true,
   onTriggerHisSimulation,
   activeScreen = 'leads',
-  onScreenChange
+  onScreenChange,
+  onToggleMobileNav
 }) {
   const [showViewsDropdown, setShowViewsDropdown] = useState(false);
-  const [showAppLauncher, setShowAppLauncher] = useState(false);
 
   const activeView = savedViews.find(v => v.id === activeViewId) || savedViews[0] || { name: 'All Leads' };
 
@@ -41,7 +38,26 @@ export function MainTopBar({
     <header className="sl-canvas-top-bar">
       {/* 1. Dynamic Breadcrumbs (Matching Image 1: Leads ⌄ / % All Leads ⌄ and Image 3: Reports & Analytics / Dashboard) */}
       <div className="sl-breadcrumb-group">
-        {activeScreen === 'reports_dashboard' ? (
+        {/* Mobile Hamburger Drawer Trigger */}
+        <button 
+          type="button" 
+          className="sl-mobile-menu-toggle"
+          onClick={onToggleMobileNav}
+          title="Open menu"
+        >
+          <Menu size={18} />
+        </button>
+        {activeScreen === 'home' || activeScreen === 'overview' ? (
+          <>
+            <div className="sl-breadcrumb-item">
+              <span className="sl-breadcrumb-parent">Home</span>
+            </div>
+            <span className="sl-breadcrumb-sep">/</span>
+            <div className="sl-breadcrumb-item">
+              <span className="sl-breadcrumb-active-view-btn">SuperAgent AI</span>
+            </div>
+          </>
+        ) : activeScreen === 'reports_dashboard' ? (
           <>
             <div className="sl-breadcrumb-item">
               <span className="sl-breadcrumb-parent">Reports & Analytics</span>
@@ -69,6 +85,16 @@ export function MainTopBar({
             <span className="sl-breadcrumb-sep">/</span>
             <div className="sl-breadcrumb-item">
               <span className="sl-breadcrumb-active-view-btn">Today's Appointments</span>
+            </div>
+          </>
+        ) : activeScreen === 'chat' ? (
+          <>
+            <div className="sl-breadcrumb-item">
+              <span className="sl-breadcrumb-parent">Engage</span>
+            </div>
+            <span className="sl-breadcrumb-sep">/</span>
+            <div className="sl-breadcrumb-item">
+              <span className="sl-breadcrumb-active-view-btn">Chats</span>
             </div>
           </>
         ) : (
@@ -123,38 +149,42 @@ export function MainTopBar({
 
       {/* 2. Right Side Controls */}
       <div className="sl-top-bar-tools">
-        {/* Instant Search Bar */}
-        <div className="sl-canvas-search-box">
-          <Search size={14} className="sl-canvas-search-icon" />
-          <input 
-            type="text" 
-            placeholder="Search...." 
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="sl-canvas-search-input"
-            id="sl-lead-search-input"
-          />
-          {searchQuery && (
-            <button 
-              type="button" 
-              className="sl-search-clear-btn"
-              onClick={() => onSearchChange('')}
-            >
-              <X size={12} />
-            </button>
-          )}
-        </div>
+        {activeScreen === 'leads' && (
+          <>
+            {/* Instant Search Bar */}
+            <div className="sl-canvas-search-box">
+              <Search size={14} className="sl-canvas-search-icon" />
+              <input 
+                type="text" 
+                placeholder="Search...." 
+                value={searchQuery}
+                onChange={(e) => onSearchChange(e.target.value)}
+                className="sl-canvas-search-input"
+                id="sl-lead-search-input"
+              />
+              {searchQuery && (
+                <button 
+                  type="button" 
+                  className="sl-search-clear-btn"
+                  onClick={() => onSearchChange('')}
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
 
-        {/* Manage Columns Icon (Stacked Layers / Boxes Icon as in Image 1) */}
-        <button 
-          type="button"
-          className="sl-icon-tool-btn"
-          onClick={onOpenColumnManager}
-          title={`Manage Visible Columns (${activeColumnsCount}/${totalColumnsCount} visible)`}
-        >
-          <Layers size={16} />
-          <span className="sl-col-count-bubble">{activeColumnsCount}</span>
-        </button>
+            {/* Manage Columns Icon (Stacked Layers / Boxes Icon as in Image 1) */}
+            <button 
+              type="button"
+              className="sl-icon-tool-btn"
+              onClick={onOpenColumnManager}
+              title={`Manage Visible Columns (${activeColumnsCount}/${totalColumnsCount} visible)`}
+            >
+              <Layers size={16} />
+              <span className="sl-col-count-bubble">{activeColumnsCount}</span>
+            </button>
+          </>
+        )}
 
         {/* HIS Webhook Live Test Button */}
         <button 
@@ -167,124 +197,18 @@ export function MainTopBar({
           <span className="sl-his-label">HIS Live</span>
         </button>
 
-        {/* SuperAgent AI Button */}
-        <button 
-          type="button"
-          className="sl-btn-superagent-mint"
-          onClick={onOpenCopilot}
-          title="Open SuperAgent AI Copilot for clinical triage"
-        >
-          <Sparkles size={14} />
-          <span>SuperAgent AI</span>
-        </button>
-
-        {/* Superleap 3x3 App Launcher Overlay Button (Matching Image 1, 2, 3) */}
-        <div className="sl-app-launcher-wrap">
+        {/* SuperAgent AI Button (Only shown when navigating outside Home) */}
+        {activeScreen !== 'home' && activeScreen !== 'overview' && (
           <button 
             type="button"
-            className={`sl-app-launcher-trigger ${showAppLauncher ? 'is-open' : ''}`}
-            onClick={() => setShowAppLauncher(!showAppLauncher)}
-            title="Superleap App Switcher"
+            className="sl-btn-superagent-mint"
+            onClick={onOpenCopilot}
+            title="Open SuperAgent AI for clinical triage"
           >
-            <Grid size={16} />
+            <Sparkles size={14} />
+            <span>SuperAgent AI</span>
           </button>
-
-          {showAppLauncher && (
-            <div className="sl-app-launcher-popover">
-              <div className="sl-launcher-grid">
-                {/* 1. Pipeline */}
-                <button 
-                  type="button" 
-                  className={`sl-launcher-tile ${activeScreen === 'pipeline' ? 'is-active-tile' : ''}`}
-                  onClick={() => {
-                    onScreenChange('pipeline');
-                    setShowAppLauncher(false);
-                  }}
-                >
-                  <div className="sl-launcher-icon">
-                    <GitFork size={20} />
-                  </div>
-                  <span>Pipeline</span>
-                </button>
-
-                {/* 2. Leads (Active Dark Teal) */}
-                <button 
-                  type="button" 
-                  className={`sl-launcher-tile ${activeScreen === 'leads' ? 'is-active-tile' : ''}`}
-                  onClick={() => {
-                    onScreenChange('leads');
-                    setShowAppLauncher(false);
-                  }}
-                >
-                  <div className="sl-launcher-icon">
-                    <Percent size={20} strokeWidth={2.5} />
-                  </div>
-                  <span>Leads</span>
-                </button>
-
-                {/* 3. Engage */}
-                <button 
-                  type="button" 
-                  className="sl-launcher-tile"
-                  onClick={() => {
-                    alert("Superleap Engage: Automated WhatsApp, SMS & Email journeys configured for Nova Fertility.");
-                    setShowAppLauncher(false);
-                  }}
-                >
-                  <div className="sl-launcher-icon">
-                    <MessageSquare size={20} />
-                  </div>
-                  <span>Engage</span>
-                </button>
-
-                {/* 4. Voice AI */}
-                <button 
-                  type="button" 
-                  className="sl-launcher-tile"
-                  onClick={() => {
-                    alert("Superleap Voice AI: Inbound triage and automated consultation reminder voice calls.");
-                    setShowAppLauncher(false);
-                  }}
-                >
-                  <div className="sl-launcher-icon">
-                    <PhoneCall size={20} />
-                  </div>
-                  <span>Voice AI</span>
-                </button>
-
-                {/* 5. Workflows */}
-                <button 
-                  type="button" 
-                  className="sl-launcher-tile"
-                  onClick={() => {
-                    alert("Superleap Workflows: Event-driven reverse synchronization with Hospital Core HIS.");
-                    setShowAppLauncher(false);
-                  }}
-                >
-                  <div className="sl-launcher-icon">
-                    <Sliders size={20} />
-                  </div>
-                  <span>Workflows</span>
-                </button>
-
-                {/* 6. Reports */}
-                <button 
-                  type="button" 
-                  className={`sl-launcher-tile ${activeScreen === 'reports_dashboard' ? 'is-active-tile' : ''}`}
-                  onClick={() => {
-                    onScreenChange('reports_dashboard');
-                    setShowAppLauncher(false);
-                  }}
-                >
-                  <div className="sl-launcher-icon">
-                    <BarChart2 size={20} />
-                  </div>
-                  <span>Reports</span>
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </header>
   );

@@ -26,8 +26,8 @@ export function SuperAgentCopilotDrawer({
       sender: 'ai',
       time: 'Just now',
       text: activeLead 
-        ? `Hello! I'm your Superleap AI Copilot. I've analyzed patient ${activeLead.patient_name} (${activeLead.id}). They have an Intent Score of ${activeLead.intent_score}/100 with concern: "${activeLead.primary_concern}". What would you like to do?`
-        : "Hello! I'm your Superleap AI Copilot. I can help summarize patient journeys, draft regional WhatsApp messages, or check HIS synchronization health. Ask me anything!"
+        ? `Hello! I'm SuperAgent AI. I've analyzed patient ${activeLead.patient_name} (${activeLead.id}). They have an Intent Score of ${activeLead.intent_score}/100 with concern: "${activeLead.primary_concern}". What would you like to do?`
+        : "Hello! I'm SuperAgent AI. I can help summarize patient journeys, draft regional WhatsApp messages, or check HIS synchronization health. Ask me anything!"
     }
   ]);
   const [inputMessage, setInputMessage] = useState('');
@@ -128,8 +128,8 @@ export function SuperAgentCopilotDrawer({
               <Sparkles size={18} />
             </div>
             <div>
-              <h3>SuperAgent Copilot</h3>
-              <p className="sl-copilot-subtitle">AI Assistant for Nova Fertility Frontline</p>
+              <h3>SuperAgent AI</h3>
+              <p className="sl-copilot-subtitle">Clinical Intelligence Agent for Nova Fertility</p>
             </div>
           </div>
           <button className="sl-modal-close" onClick={onClose}>

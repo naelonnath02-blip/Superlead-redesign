@@ -19,7 +19,8 @@ import {
   CheckCircle2,
   Clock,
   Dna,
-  Share2
+  Share2,
+  Globe
 } from 'lucide-react';
 import { PATIENT_STAGES } from '../data/mockLeads';
 
@@ -57,56 +58,14 @@ export function LeadDetailDrawer({
           </div>
         </div>
 
-        {/* 2. Patient Identity & Badges Bar (Matching Image 2) */}
+        {/* 2. Patient Identity Bar (Name Only) */}
         <div className="sl-record-identity-bar">
           <div className="sl-record-identity-main">
             <div className="sl-record-avatar">
               {lead.patient_name.charAt(0)}
             </div>
             <div className="sl-record-name-group">
-              <div className="sl-record-name-row">
-                <h2 className="sl-record-patient-name">{lead.patient_name}</h2>
-                <span className="sl-badge-fresh-lead">FRESH LEAD</span>
-                {lead.stage === 'first_consultation' && (
-                  <span className="sl-badge-stage-pill sl-badge-consult">FIRST CONSULTATION</span>
-                )}
-                {lead.stage === 'ivf_cycle' && (
-                  <span className="sl-badge-stage-pill sl-badge-ivf">IVF CYCLE (HIS LIVE)</span>
-                )}
-              </div>
-
-              {/* Sub-Badges Row (Matching Image 2) */}
-              <div className="sl-record-sub-badges-row">
-                {/* Phone Badge */}
-                <span className="sl-sub-badge" onClick={() => onQuickCall(lead)}>
-                  <Phone size={11} />
-                  <span>{lead.phone}</span>
-                </span>
-
-                {/* Channel Badge */}
-                <span className="sl-sub-badge is-channel">
-                  <span className="sl-channel-sq-icon">mb</span>
-                  <span>{lead.lead_source || 'MagicBricks'}</span>
-                </span>
-
-                {/* City Badge */}
-                <span className="sl-sub-badge">
-                  <Building2 size={11} />
-                  <span>{lead.city}</span>
-                </span>
-
-                {/* Language Badge */}
-                <span className="sl-sub-badge">
-                  <Languages size={11} />
-                  <span>{lead.preferred_language || 'English'}</span>
-                </span>
-
-                {/* Care Type Badge */}
-                <span className="sl-sub-badge is-care-type">
-                  <Home size={11} />
-                  <span>Self-Cycle IVF (3 BHK)</span>
-                </span>
-              </div>
+              <h2 className="sl-record-patient-name">{lead.patient_name}</h2>
             </div>
           </div>
 
@@ -384,8 +343,8 @@ export function LeadDetailDrawer({
                   <span>Channel</span>
                 </span>
                 <span className="sl-prop-channel-badge">
-                  <span className="sl-mb-icon">mb</span>
-                  <span>{lead.lead_source || 'MagicBricks'}</span>
+                  <Globe size={12} className="sl-prop-channel-icon" />
+                  <span>{lead.lead_source || 'Website In-Clinic Booking'}</span>
                 </span>
               </div>
 
@@ -413,13 +372,13 @@ export function LeadDetailDrawer({
                     </div>
 
                     <div className="sl-sub-prop-row">
-                      <span className="sl-sub-prop-label">Property Name</span>
-                      <span className="sl-sub-prop-link">Goldcrest Residency</span>
+                      <span className="sl-sub-prop-label">Clinical Protocol</span>
+                      <span className="sl-sub-prop-link">Self-Cycle IVF + ICSI</span>
                     </div>
 
                     <div className="sl-sub-prop-row">
-                      <span className="sl-sub-prop-label">House Category</span>
-                      <span className="sl-badge-house">3 BHK</span>
+                      <span className="sl-sub-prop-label">Treatment Category</span>
+                      <span className="sl-badge-house">Advanced IVF</span>
                     </div>
 
                     <div className="sl-sub-prop-row">

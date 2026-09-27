@@ -1,22 +1,13 @@
 import React, { useState } from 'react';
 import { 
   Home, 
+  Percent,
   GitBranch, 
   FileText, 
   Briefcase, 
-  LayoutGrid, 
-  ChevronDown, 
-  ChevronRight, 
-  Percent, 
-  GraduationCap, 
-  Users, 
-  Sparkles,
-  BarChart2,
-  Settings,
-  HelpCircle,
-  Activity,
-  CheckCircle2,
-  ShieldCheck
+  MessageSquare, 
+  ChevronDown,
+  X
 } from 'lucide-react';
 
 export function SidebarNav({
@@ -27,15 +18,24 @@ export function SidebarNav({
   onSelectQuickSmartboard,
   activeSmartboardFilter,
   onOpenCopilot,
-  totalLeadsCount = 140
+  totalLeadsCount = 140,
+  isMobileOpen = false,
+  onCloseMobile
 }) {
-  const [smartboardsOpen, setSmartboardsOpen] = useState(true);
-  const [workspaceOpen, setWorkspaceOpen] = useState(true);
-  const [reportsOpen, setReportsOpen] = useState(false);
   const [showAdminMenu, setShowAdminMenu] = useState(false);
 
+  const handleNavClick = (screenId, smartboardType) => {
+    onScreenChange(screenId);
+    if (smartboardType && onSelectQuickSmartboard) {
+      onSelectQuickSmartboard(smartboardType);
+    }
+    if (onCloseMobile) {
+      onCloseMobile();
+    }
+  };
+
   return (
-    <aside className="sl-sidebar-container">
+    <aside className={`sl-sidebar-container ${isMobileOpen ? 'is-mobile-open' : ''}`}>
       {/* 1. Superleap Brand Header */}
       <div className="sl-sidebar-header">
         <div className="sl-brand-logo-wrap">
@@ -48,221 +48,90 @@ export function SidebarNav({
           </div>
           <span className="sl-brand-title">Superleap</span>
         </div>
+
+        {/* Mobile Close Button */}
+        {onCloseMobile && (
+          <button 
+            type="button" 
+            className="sl-sidebar-mobile-close"
+            onClick={onCloseMobile}
+            title="Close navigation"
+          >
+            <X size={18} />
+          </button>
+        )}
       </div>
 
-      {/* 2. Top Group Navigation Icons */}
+      {/* 2. Unified Main Navigation (No colored icons, clean monochrome outlines) */}
       <nav className="sl-sidebar-top-nav">
-        {/* Home */}
+        {/* Home (SuperAgent AI) */}
         <button 
           type="button"
-          className={`sl-nav-item ${activeScreen === 'overview' ? 'is-active' : ''}`}
-          onClick={() => onScreenChange('leads')}
-          title="Home Dashboard"
+          className={`sl-nav-item ${activeScreen === 'home' || activeScreen === 'overview' ? 'is-active' : ''}`}
+          onClick={() => handleNavClick('home')}
+          title="Home - SuperAgent AI"
         >
           <Home size={17} className="sl-nav-icon" />
           <span className="sl-nav-label">Home</span>
+        </button>
+
+        {/* Leads (Right below Home, monochrome standard icon) */}
+        <button 
+          type="button"
+          className={`sl-nav-item ${activeScreen === 'leads' ? 'is-active' : ''}`}
+          onClick={() => handleNavClick('leads', 'all')}
+          title="Leads / Deals Pipeline"
+        >
+          <Percent size={17} className="sl-nav-icon" strokeWidth={2.2} />
+          <span className="sl-nav-label">Leads</span>
         </button>
 
         {/* Pipelines / Patient Journey */}
         <button 
           type="button"
           className={`sl-nav-item ${activeScreen === 'pipeline' ? 'is-active' : ''}`}
-          onClick={() => onScreenChange('pipeline')}
+          onClick={() => handleNavClick('pipeline')}
           title="Clinical Pipeline (Kanban)"
         >
           <GitBranch size={17} className="sl-nav-icon" />
           <span className="sl-nav-label">Pipeline</span>
         </button>
 
-        {/* Document / Records */}
+        {/* Clinic Day */}
         <button 
           type="button"
           className={`sl-nav-item ${activeScreen === 'clinic_day' ? 'is-active' : ''}`}
-          onClick={() => onScreenChange('clinic_day')}
+          onClick={() => handleNavClick('clinic_day')}
           title="Today's Clinic Actions"
         >
           <FileText size={17} className="sl-nav-icon" />
           <span className="sl-nav-label">Clinic Day</span>
         </button>
 
-        {/* Reports & Analytics (Expandable matching Image 3) */}
-        <div className="sl-nav-expandable-group">
-          <button 
-            type="button"
-            className={`sl-nav-item ${activeScreen === 'reports_dashboard' ? 'is-active' : ''}`}
-            onClick={() => {
-              setReportsOpen(!reportsOpen);
-              if (activeScreen !== 'reports_dashboard') {
-                onScreenChange('reports_dashboard');
-              }
-            }}
-            title="Reports & Analytics"
-          >
-            <Briefcase size={17} className="sl-nav-icon" />
-            <span className="sl-nav-label">Reports & Analytics</span>
-            <ChevronDown size={14} className={`sl-chevron-rotatable ${reportsOpen ? 'is-open' : ''}`} />
-          </button>
-
-          {reportsOpen && (
-            <div className="sl-nav-sub-items">
-              <button 
-                type="button" 
-                className={`sl-sub-nav-item ${activeScreen === 'reports_dashboard' ? 'is-sub-active' : ''}`}
-                onClick={() => onScreenChange('reports_dashboard')}
-              >
-                <BarChart2 size={14} className="sl-sub-icon" />
-                <span>Dashboard</span>
-              </button>
-              <button 
-                type="button" 
-                className="sl-sub-nav-item"
-                onClick={() => onScreenChange('audit')}
-              >
-                <ShieldCheck size={14} className="sl-sub-icon" />
-                <span>Deployment Audit</span>
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Modules / Grid */}
+        {/* Reports & Analytics */}
         <button 
-          type="button"
-          className="sl-nav-item"
-          onClick={() => onOpenCopilot && onOpenCopilot()}
-          title="SuperAgent Copilot"
+          type="button" 
+          className={`sl-nav-item ${activeScreen === 'reports_dashboard' ? 'is-active' : ''}`}
+          onClick={() => handleNavClick('reports_dashboard')}
+          title="Reports & Analytics Dashboard"
         >
-          <LayoutGrid size={17} className="sl-nav-icon" />
-          <span className="sl-nav-label">Modules</span>
+          <Briefcase size={17} className="sl-nav-icon" />
+          <span className="sl-nav-label">Reports & Analytics</span>
+        </button>
+
+        {/* Chat / Engage */}
+        <button 
+          type="button" 
+          className={`sl-nav-item ${activeScreen === 'chat' ? 'is-active' : ''}`}
+          onClick={() => handleNavClick('chat')}
+          title="Omnichannel Chat & WhatsApp"
+        >
+          <MessageSquare size={17} className="sl-nav-icon" />
+          <span className="sl-nav-label">Chat</span>
         </button>
       </nav>
 
-      {/* 3. Section: SMARTBOARDS (Collapsible) */}
-      <div className="sl-sidebar-section">
-        <button 
-          type="button"
-          className="sl-section-header-btn"
-          onClick={() => setSmartboardsOpen(!smartboardsOpen)}
-        >
-          {smartboardsOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-          <span>SMARTBOARDS</span>
-        </button>
-
-        {smartboardsOpen && (
-          <div className="sl-section-items">
-            {/* Pink User Dot: High Intent IVF */}
-            <button 
-              type="button"
-              className={`sl-smartboard-item ${activeSmartboardFilter === 'high_intent' ? 'is-smartboard-active' : ''}`}
-              onClick={() => {
-                onScreenChange('leads');
-                onSelectQuickSmartboard('high_intent');
-              }}
-              title="Filter to 85+ High Intent IVF Candidates"
-            >
-              <span className="sl-smart-circle sl-circle-pink">
-                <span className="sl-dot-inner"></span>
-              </span>
-              <span className="sl-smartboard-label">High Intent IVF (85+)</span>
-            </button>
-
-            {/* Green WhatsApp/Chat Dot: Omnichannel Chat */}
-            <button 
-              type="button"
-              className={`sl-smartboard-item ${activeSmartboardFilter === 'omnichannel' ? 'is-smartboard-active' : ''}`}
-              onClick={() => {
-                onScreenChange('leads');
-                onSelectQuickSmartboard('omnichannel');
-              }}
-              title="Filter to WhatsApp & Omnichannel Chat Inquiries"
-            >
-              <span className="sl-smart-circle sl-circle-green">
-                <span className="sl-dot-inner"></span>
-              </span>
-              <span className="sl-smartboard-label">Omnichannel Chat</span>
-            </button>
-
-            {/* Cyan / Blue Database Dot: HIS EHR Reverse-Sync */}
-            <button 
-              type="button"
-              className={`sl-smartboard-item ${activeSmartboardFilter === 'his_synced' ? 'is-smartboard-active' : ''}`}
-              onClick={() => {
-                onScreenChange('leads');
-                onSelectQuickSmartboard('his_synced');
-              }}
-              title="Filter to HIS Cycle Start & Hospital Synced Patients"
-            >
-              <span className="sl-smart-circle sl-circle-cyan">
-                <span className="sl-dot-inner"></span>
-              </span>
-              <span className="sl-smartboard-label">HIS EHR Sync</span>
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* 4. Section: WORKSPACE (Collapsible) */}
-      <div className="sl-sidebar-section">
-        <button 
-          type="button"
-          className="sl-section-header-btn"
-          onClick={() => setWorkspaceOpen(!workspaceOpen)}
-        >
-          {workspaceOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-          <span>WORKSPACE</span>
-        </button>
-
-        {workspaceOpen && (
-          <div className="sl-section-items">
-            {/* Active Card: % Leads (Matching Image 1 & 2) */}
-            <button 
-              type="button"
-              className={`sl-workspace-card-item ${activeScreen === 'leads' ? 'is-workspace-active' : ''}`}
-              onClick={() => {
-                onScreenChange('leads');
-                onSelectQuickSmartboard('all');
-              }}
-              title="Deals / Patient Inquiries List"
-            >
-              <span className="sl-percent-badge">
-                <Percent size={12} strokeWidth={2.5} />
-              </span>
-              <span className="sl-workspace-card-text">Leads</span>
-              <span className="sl-workspace-count">{totalLeadsCount}</span>
-            </button>
-
-            {/* Orange Cap: Knowledge Hub */}
-            <button 
-              type="button"
-              className="sl-workspace-item"
-              onClick={() => {
-                alert("Superleap Clinical Protocols & FAQ Hub: Instant counseling guidelines for 140 clinics.");
-              }}
-              title="Protocols & Clinical FAQs"
-            >
-              <span className="sl-smart-circle sl-circle-orange">
-                <GraduationCap size={12} />
-              </span>
-              <span className="sl-smartboard-label">Knowledge Hub</span>
-            </button>
-
-            {/* Green Team: Clinic Counsellors */}
-            <button 
-              type="button"
-              className="sl-workspace-item"
-              onClick={() => onScreenChange('clinic_day')}
-              title="140 Clinic Frontline Roster"
-            >
-              <span className="sl-smart-circle sl-circle-emerald">
-                <Users size={12} />
-              </span>
-              <span className="sl-smartboard-label">Clinic Counsellors</span>
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* 5. Bottom Pinned Admin Profile Chip (Matching Image 1, 2, 3) */}
+      {/* 3. Bottom Pinned Admin Profile Chip */}
       <div className="sl-sidebar-footer">
         <div className="sl-admin-chip-wrap">
           <button 
@@ -283,7 +152,6 @@ export function SidebarNav({
             <div className="sl-admin-dropdown">
               <div className="sl-admin-dropdown-header">
                 <span>Frontline Role Preview</span>
-                <small>Test 6 cols vs 40 cols</small>
               </div>
               <button 
                 type="button"
@@ -293,7 +161,7 @@ export function SidebarNav({
                   setShowAdminMenu(false);
                 }}
               >
-                <strong>Call Agent</strong> (6 columns)
+                <span>Call Agent</span>
               </button>
               <button 
                 type="button"
@@ -303,7 +171,7 @@ export function SidebarNav({
                   setShowAdminMenu(false);
                 }}
               >
-                <strong>Clinic Counsellor</strong> (Clean Image 1)
+                <span>Clinic Counsellor</span>
               </button>
               <button 
                 type="button"
@@ -313,7 +181,7 @@ export function SidebarNav({
                   setShowAdminMenu(false);
                 }}
               >
-                <strong>Clinic Manager</strong> (10 columns)
+                <span>Clinic Manager</span>
               </button>
               <button 
                 type="button"
@@ -323,7 +191,7 @@ export function SidebarNav({
                   setShowAdminMenu(false);
                 }}
               >
-                <strong>Zoho Legacy View</strong> (All 40 columns)
+                <span>Zoho Legacy View</span>
               </button>
             </div>
           )}

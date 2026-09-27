@@ -9,7 +9,8 @@ import { BookConsultationModal } from './components/BookConsultationModal';
 import { LeadDetailDrawer } from './components/LeadDetailDrawer';
 import { ClinicDayOverview } from './components/ClinicDayOverview';
 import { PatientJourneyKanban } from './components/PatientJourneyKanban';
-import { DeploymentAuditScreen } from './components/DeploymentAuditScreen';
+import { OmnichannelChatView } from './components/OmnichannelChatView';
+import { HomeSuperAgentView } from './components/HomeSuperAgentView';
 import { SuperAgentCopilotDrawer } from './components/SuperAgentCopilotDrawer';
 import { MobileBottomActionBar } from './components/MobileBottomActionBar';
 import { NotificationToast } from './components/NotificationToast';
@@ -34,6 +35,8 @@ export function App() {
     activeViewId,
     selectView,
     saveAsNewView,
+    togglePinDefaultView,
+    renameSavedView,
     updateCurrentView,
     deleteSavedView,
     isFilterModified
@@ -43,7 +46,7 @@ export function App() {
   const [leads, setLeads] = useState(INITIAL_LEADS);
 
   // 3. UI Navigation State
-  const [activeScreen, setActiveScreen] = useState('leads'); // 'leads' | 'reports_dashboard' | 'clinic_day' | 'pipeline' | 'audit'
+  const [activeScreen, setActiveScreen] = useState('home'); // 'home' | 'leads' | 'reports_dashboard' | 'clinic_day' | 'pipeline' | 'audit' | 'chat'
   const [activeSmartboardFilter, setActiveSmartboardFilter] = useState('all');
 
   // 4. Modals & Drawers State
@@ -51,11 +54,8 @@ export function App() {
   const [bookingLead, setBookingLead] = useState(null);
   const [selectedLead, setSelectedLead] = useState(null);
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
-  const [toast, setToast] = useState({
-    title: 'Superleap CRM Initialized',
-    message: 'Loaded authentic left nav and clean deals population. 0% filter loss active.',
-    type: 'success'
-  });
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [toast, setToast] = useState(null);
   const [hisSyncActive, setHisSyncActive] = useState(true);
 
   // Auto-dismiss toast
@@ -73,8 +73,8 @@ export function App() {
       updateFilter('minScore', 85);
       showToast('Smartboard: High Intent IVF', 'Filtered to patients with score ≥ 85%', 'info');
     } else if (filterType === 'omnichannel') {
-      updateFilter('source', 'Facebook Ads');
-      showToast('Smartboard: Omnichannel Leads', 'Filtered to active digital & chat inbound inquiries', 'info');
+      setActiveScreen('chat');
+      showToast('Omnichannel Engage', 'Opened WhatsApp & Messenger live chat inbox', 'info');
     } else if (filterType === 'his_synced') {
       updateFilter('hisSync', 'cycle_active');
       showToast('Smartboard: HIS Cycle Starts', 'Filtered to patients actively undergoing stimulation in hospital', 'his');
@@ -255,14 +255,27 @@ export function App() {
       {/* 1. Authentic Superleap Left Navigation Sidebar */}
       <SidebarNav 
         activeScreen={activeScreen}
-        onScreenChange={setActiveScreen}
+        onScreenChange={(screen) => {
+          setActiveScreen(screen);
+          setMobileNavOpen(false);
+        }}
         currentRole={currentRole}
         onRoleChange={handleRoleChange}
         onSelectQuickSmartboard={handleSmartboardClick}
         activeSmartboardFilter={activeSmartboardFilter}
         onOpenCopilot={() => setIsCopilotOpen(true)}
         totalLeadsCount={leads.length}
+        isMobileOpen={mobileNavOpen}
+        onCloseMobile={() => setMobileNavOpen(false)}
       />
+
+      {/* Mobile Sidebar Backdrop Overlay */}
+      {mobileNavOpen && (
+        <div 
+          className="sl-sidebar-mobile-backdrop" 
+          onClick={() => setMobileNavOpen(false)} 
+        />
+      )}
 
       {/* 2. Main Content Canvas (Framed inside rounded white card) */}
       <div className="sl-main-canvas-wrapper">
@@ -282,23 +295,49 @@ export function App() {
             onTriggerHisSimulation={handleTriggerHisSimulation}
             activeScreen={activeScreen}
             onScreenChange={setActiveScreen}
+            onToggleMobileNav={() => setMobileNavOpen(prev => !prev)}
           />
 
           {/* Canvas Dynamic Body */}
           <div className="sl-canvas-viewport">
+            {/* Home Screen: SuperAgent AI (ChatGPT-style Account & Data Queries) */}
+            {(activeScreen === 'home' || activeScreen === 'overview') && (
+              <HomeSuperAgentView 
+                leads={leads}
+                onNavigateToLeads={(filterType) => {
+                  if (filterType === 'high_intent') {
+                    updateFilter('minScore', 85);
+                  }
+                  setActiveScreen('leads');
+                }}
+                onOpenBookConsultation={(lead) => setBookingLead(lead)}
+                onQuickWhatsApp={handleQuickWhatsApp}
+                onQuickCall={handleQuickCall}
+                onSelectLead={(lead) => setSelectedLead(lead)}
+              />
+            )}
+
             {activeScreen === 'leads' && (
               <div className="sl-screen-leads-view">
-                {/* Superleap Signature Filter Toolbar */}
+                {/* Superleap Signature Filter Toolbar with Explicit Manage Columns Dropdown */}
                 <FilterToolbar 
                   filters={filters}
                   onUpdateFilter={updateFilter}
                   onResetFilters={resetFilters}
+                  visibleColumns={visibleColumns}
+                  onUpdateColumns={updateColumns}
                   onOpenColumnManager={() => setShowColumnManager(true)}
+                  savedViews={savedViews}
+                  activeViewId={activeViewId}
+                  onSelectView={selectView}
+                  onTogglePinDefault={togglePinDefaultView}
+                  onRenameView={renameSavedView}
+                  onDeleteView={deleteSavedView}
+                  onSaveCurrentView={(name, setAsDefault) => saveAsNewView(name, setAsDefault)}
                   activeColumnsCount={visibleColumns.length}
                   totalColumnsCount={ALL_COLUMNS.length}
                   matchedCount={filteredLeads.length}
                   totalCount={leads.length}
-                  onSaveCurrentView={(name) => saveAsNewView(name)}
                 />
 
                 {/* Clean Population of the Deals Table (Matching Image 1) */}
@@ -336,10 +375,10 @@ export function App() {
               />
             )}
 
-            {/* Deployment Audit Screen */}
-            {activeScreen === 'audit' && (
-              <DeploymentAuditScreen 
-                onTriggerHisSimulation={handleTriggerHisSimulation}
+            {/* Omnichannel Chat & WhatsApp (Matching User Screenshot) */}
+            {activeScreen === 'chat' && (
+              <OmnichannelChatView 
+                onOpenBookConsultation={(lead) => setBookingLead(lead)}
               />
             )}
           </div>
@@ -387,14 +426,16 @@ export function App() {
         onQuickWhatsApp={handleQuickWhatsApp}
       />
 
-      {/* 7. Mobile Sticky Bottom Action Bar */}
-      <MobileBottomActionBar 
-        activeLead={mobileActiveLead}
-        onOpenBookConsultation={(lead) => setBookingLead(lead)}
-        onQuickCall={handleQuickCall}
-        onQuickWhatsApp={handleQuickWhatsApp}
-        onOpenColumnManager={() => setShowColumnManager(true)}
-      />
+      {/* 7. Mobile Sticky Bottom Action Bar (Only on Leads View) */}
+      {activeScreen === 'leads' && (
+        <MobileBottomActionBar 
+          activeLead={mobileActiveLead}
+          onOpenBookConsultation={(lead) => setBookingLead(lead)}
+          onQuickCall={handleQuickCall}
+          onQuickWhatsApp={handleQuickWhatsApp}
+          onOpenColumnManager={() => setShowColumnManager(true)}
+        />
+      )}
 
       {/* 8. Live Notification Toast */}
       {toast && (
