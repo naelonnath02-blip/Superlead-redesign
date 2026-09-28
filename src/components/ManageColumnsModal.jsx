@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   X, 
   Search, 
@@ -8,10 +8,9 @@ import {
   SlidersHorizontal,
   Info,
   Layers,
-  Sparkles,
   ShieldAlert
 } from 'lucide-react';
-import { ALL_COLUMNS, ROLE_PRESETS } from '../data/columnsDefinition';
+import { ALL_COLUMNS } from '../data/columnsDefinition';
 
 export function ManageColumnsModal({
   visibleColumns,
@@ -23,6 +22,10 @@ export function ManageColumnsModal({
   const [selectedColumnIds, setSelectedColumnIds] = useState([...visibleColumns]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  
+  // Ref-based drag tracking ensures synchronous persistence across React renders
+  const dragSourceIndexRef = useRef(null);
+  const dragOverTargetIndexRef = useRef(null);
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
 
@@ -41,50 +44,83 @@ export function ManageColumnsModal({
     }
   };
 
-  // Drag and Drop handlers
+  // Robust Drag and Drop handlers
   const handleDragStart = (e, index) => {
+    dragSourceIndexRef.current = index;
     setDraggedIndex(index);
     e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', index.toString());
+    try {
+      e.dataTransfer.setData('text/plain', String(index));
+    } catch (_) {}
   };
 
-  const handleDragOver = (e, index) => {
+  const handleDragEnter = (e, index) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
+    dragOverTargetIndexRef.current = index;
     if (dragOverIndex !== index) {
       setDragOverIndex(index);
     }
   };
 
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    dragOverTargetIndexRef.current = index;
+    if (dragOverIndex !== index) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+  };
+
   const handleDrop = (e, targetIndex) => {
     e.preventDefault();
-    if (draggedIndex === null || draggedIndex === targetIndex) {
-      setDraggedIndex(null);
-      setDragOverIndex(null);
-      return;
+    e.stopPropagation();
+
+    // Source index from ref, dataTransfer, or fallback state
+    let sourceIdx = dragSourceIndexRef.current;
+    if (sourceIdx === null || sourceIdx === undefined) {
+      try {
+        const raw = e.dataTransfer.getData('text/plain');
+        if (raw !== '') sourceIdx = parseInt(raw, 10);
+      } catch (_) {}
+    }
+    if (sourceIdx === null || sourceIdx === undefined) {
+      sourceIdx = draggedIndex;
     }
 
-    const updatedCols = [...selectedColumnIds];
-    const [draggedItem] = updatedCols.splice(draggedIndex, 1);
-    updatedCols.splice(targetIndex, 0, draggedItem);
+    const destIdx = (targetIndex !== undefined && targetIndex !== null) ? targetIndex : dragOverTargetIndexRef.current;
 
-    setSelectedColumnIds(updatedCols);
+    if (
+      sourceIdx !== null && 
+      sourceIdx !== undefined && 
+      !isNaN(sourceIdx) && 
+      destIdx !== null && 
+      destIdx !== undefined && 
+      !isNaN(destIdx) && 
+      sourceIdx !== destIdx
+    ) {
+      setSelectedColumnIds(prevCols => {
+        const updated = [...prevCols];
+        const [movedItem] = updated.splice(sourceIdx, 1);
+        updated.splice(destIdx, 0, movedItem);
+        return updated;
+      });
+    }
+
+    dragSourceIndexRef.current = null;
+    dragOverTargetIndexRef.current = null;
     setDraggedIndex(null);
     setDragOverIndex(null);
   };
 
   const handleDragEnd = () => {
+    dragSourceIndexRef.current = null;
+    dragOverTargetIndexRef.current = null;
     setDraggedIndex(null);
     setDragOverIndex(null);
-  };
-
-  // Apply a role preset
-  const handleApplyPreset = (presetKey) => {
-    const preset = ROLE_PRESETS[presetKey];
-    if (preset) {
-      setSelectedColumnIds([...preset.columns]);
-      if (onApplyPreset) onApplyPreset(presetKey);
-    }
   };
 
   // Filter columns by search and category
@@ -117,40 +153,6 @@ export function ManageColumnsModal({
           <button className="sl-modal-close" onClick={onClose}>
             <X size={20} />
           </button>
-        </div>
-
-        {/* Role Presets Quick-Select Bar */}
-        <div className="sl-role-presets-box">
-          <div className="sl-presets-header">
-            <Sparkles size={14} className="sl-sparkle-icon" />
-            <span>Recommended Role Presets (1-Click Switch):</span>
-          </div>
-          <div className="sl-presets-grid">
-            {Object.entries(ROLE_PRESETS).map(([key, preset]) => {
-              const isSelected = selectedColumnIds.length === preset.columns.length &&
-                                 preset.columns.every(c => selectedColumnIds.includes(c));
-              const isLegacy = key === 'zoho_legacy';
-
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  className={`sl-preset-card ${isSelected ? 'is-selected' : ''} ${isLegacy ? 'is-legacy' : ''}`}
-                  onClick={() => handleApplyPreset(key)}
-                >
-                  <div className="sl-preset-card-top">
-                    <span className="sl-preset-name">{preset.name}</span>
-                    {isLegacy ? (
-                      <span className="sl-legacy-tag">Zoho Overload</span>
-                    ) : (
-                      <span className="sl-count-tag">{preset.columns.length} cols</span>
-                    )}
-                  </div>
-                  <p className="sl-preset-desc">{preset.description}</p>
-                </button>
-              );
-            })}
-          </div>
         </div>
 
         {/* Column Manager Body: Dual Column (Available / Order) */}
@@ -231,13 +233,14 @@ export function ManageColumnsModal({
                     key={col.id} 
                     draggable
                     onDragStart={(e) => handleDragStart(e, index)}
+                    onDragEnter={(e) => handleDragEnter(e, index)}
                     onDragOver={(e) => handleDragOver(e, index)}
+                    onDragLeave={handleDragLeave}
                     onDrop={(e) => handleDrop(e, index)}
                     onDragEnd={handleDragEnd}
                     className={`sl-order-item is-draggable ${draggedIndex === index ? 'is-dragging' : ''} ${dragOverIndex === index ? 'is-drag-over' : ''}`}
-                    title="Drag and drop to reorder column order"
                   >
-                    <div className="sl-drag-handle" title="Drag to reorder">
+                    <div className="sl-drag-handle">
                       <GripVertical size={16} />
                     </div>
                     <span className="sl-order-num">{index + 1}</span>
@@ -250,7 +253,7 @@ export function ManageColumnsModal({
                       {!col.alwaysVisible && (
                         <button 
                           type="button" 
-                          onClick={() => toggleColumn(col.id)}
+                          onClick={(e) => { e.stopPropagation(); toggleColumn(col.id); }}
                           title="Remove column from table"
                           className="sl-remove-col-btn"
                         >
